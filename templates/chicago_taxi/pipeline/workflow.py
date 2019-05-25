@@ -16,7 +16,7 @@ import argparse
 import json
 import os
 
-from typing import Optional, Dict, List
+from typing import Optional, Dict, List, Text
 
 from google.protobuf import text_format
 
@@ -26,9 +26,9 @@ import data_source
 from kfp import dsl
 from kfp import gcp
 from kfp.compiler import compiler
-from kubernetes import client as k8s_client
 
 import tensorflow as tf
+from . import manager
 
 from tfx.components.example_gen.big_query_example_gen import component as big_query_example_gen_component
 from tfx.components.statistics_gen import component as statistics_gen_component
@@ -45,6 +45,9 @@ from tfx.proto import pusher_pb2
 from tfx.proto import trainer_pb2
 from tfx.utils import types
 from tfx.utils import channel
+
+
+# TODO(muchida): Modularize other component definitions as well.
 
 class StatisticsGen(TfxComponentWrapper):
 
@@ -162,43 +165,61 @@ _taxi_utils = "gs://muchida-tfx-oss-kfp/taxi_utils.py"
     name="Chicago Taxi Cab Tip Prediction Pipeline",
     description="TODO"
 )
-def pipeline():
+def pipeline(
+    # Pipeline-level parames
+    gcp_project_id: Text=manager.PROJECT_ID,
+    gcp_region: Text=manager.GCP_REGION,
+    pipeline_root: Text=manager.PIPELINE_ROOT,
+    pipeline_name: Text=manager.PIPELINE_NAME,
+    log_root: Text=manager.LOG_ROOT,
+    # ExampleGen parames
+    num_records: int = 10000,
+):
 
-  example_gen = data_source.bigquery(num_records=10000)
+  common_component_args = {
+      'gcp_project_id': gcp_project_id,
+      'gcp_region': gcp_region,
+      'pipeline_root': pipeline_root,
+      'pipeline_name': pipeline_name,
+      'log_root': log_root,
+  }
 
-  statistics_gen = StatisticsGen(input_data=example_gen.outputs['examples'])
+  example_gen = data_source.bigquery(
+      num_records=num_records, **common_component_args)
 
-  infer_schema = SchemaGen(stats=statistics_gen.outputs['output'])
-
-  validate_stats = ExampleValidator(
-      stats=statistics_gen.outputs['output'],
-      schema=infer_schema.outputs['output'])
-
-  transform = Transform(
-      input_data=example_gen.outputs['examples'],
-      schema=infer_schema.outputs['output'],
-      module_file=_taxi_utils)
-
-  trainer = Trainer(
-      module_file=_taxi_utils,
-      transformed_examples=transform.outputs['transformed_examples'],
-      schema=infer_schema.outputs['output'],
-      transform_output=transform.outputs['transform_output'],
-      training_steps=10000,
-      eval_training_steps=5000)
-
-  model_analyzer = Evaluator(
-      examples=example_gen.outputs['examples'],
-      model_exports=trainer.outputs['output'],
-      feature_slicing_spec=[['trip_start_hour']])
-
-  model_validator = ModelValidator(
-      examples=example_gen.outputs['examples'], model=trainer.outputs['output'])
-
-  pusher = Pusher(
-      model_export=trainer.outputs['output'],
-      model_blessing=model_validator.outputs['blessing'],
-      serving_directory="")
+#  statistics_gen = StatisticsGen(input_data=example_gen.outputs['examples'])
+#
+#  infer_schema = SchemaGen(stats=statistics_gen.outputs['output'])
+#
+#  validate_stats = ExampleValidator(
+#      stats=statistics_gen.outputs['output'],
+#      schema=infer_schema.outputs['output'])
+#
+#  transform = Transform(
+#      input_data=example_gen.outputs['examples'],
+#      schema=infer_schema.outputs['output'],
+#      module_file=_taxi_utils)
+#
+#  trainer = Trainer(
+#      module_file=_taxi_utils,
+#      transformed_examples=transform.outputs['transformed_examples'],
+#      schema=infer_schema.outputs['output'],
+#      transform_output=transform.outputs['transform_output'],
+#      training_steps=10000,
+#      eval_training_steps=5000)
+#
+#  model_analyzer = Evaluator(
+#      examples=example_gen.outputs['examples'],
+#      model_exports=trainer.outputs['output'],
+#      feature_slicing_spec=[['trip_start_hour']])
+#
+#  model_validator = ModelValidator(
+#      examples=example_gen.outputs['examples'], model=trainer.outputs['output'])
+#
+#  pusher = Pusher(
+#      model_export=trainer.outputs['output'],
+#      model_blessing=model_validator.outputs['blessing'],
+#      serving_directory="")
 
 
 if __name__ == '__main__':

@@ -14,42 +14,41 @@ from common.adapter import TfxComponentWrapper
 
 from typing import Optional, Dict, Text
 
-### NOTE: This is vulnerable to SQL Injection.
-QUERY_TMPL = """
-    SELECT
-      pickup_community_area,
-      fare,
-      EXTRACT(MONTH FROM trip_start_timestamp) AS trip_start_month,
-      EXTRACT(HOUR FROM trip_start_timestamp) AS trip_start_hour,
-      EXTRACT(DAYOFWEEK FROM trip_start_timestamp) AS trip_start_day,
-      UNIX_SECONDS(trip_start_timestamp) AS trip_start_timestamp,
-      pickup_latitude,
-      pickup_longitude,
-      dropoff_latitude,
-      dropoff_longitude,
-      trip_miles,
-      pickup_census_tract,
-      dropoff_census_tract,
-      payment_type,
-      company,
-      trip_seconds,
-      dropoff_community_area,
-      tips
-    FROM `bigquery-public-data.chicago_taxi_trips.taxi_trips`
-    LIMIT %s
-"""
 
-def bigquery(
-    num_records: int,
-    **kwargs
-) -> TfxComponentWrapper:
+def bigquery(num_records: int, **kwargs) -> TfxComponentWrapper:
   """Defines data generation from BigQuery."""
+
+  ### NOTE: This is vulnerable to SQL Injection.
+  QUERY_TMPL = """
+      SELECT
+        pickup_community_area,
+        fare,
+        EXTRACT(MONTH FROM trip_start_timestamp) AS trip_start_month,
+        EXTRACT(HOUR FROM trip_start_timestamp) AS trip_start_hour,
+        EXTRACT(DAYOFWEEK FROM trip_start_timestamp) AS trip_start_day,
+        UNIX_SECONDS(trip_start_timestamp) AS trip_start_timestamp,
+        pickup_latitude,
+        pickup_longitude,
+        dropoff_latitude,
+        dropoff_longitude,
+        trip_miles,
+        pickup_census_tract,
+        dropoff_census_tract,
+        payment_type,
+        company,
+        trip_seconds,
+        dropoff_community_area,
+        tips
+      FROM `bigquery-public-data.chicago_taxi_trips.taxi_trips`
+      LIMIT {}
+  """
 
   class _BigQueryExampleGen(TfxComponentWrapper):
 
     def __init__(self):
       component = big_query_example_gen_component.BigQueryExampleGen(
-          QUERY_TMPL.format(num_records))
-      super().__init__(component)
+          QUERY_TMPL.format(num_records),
+      )
+      super().__init__(component, **kwargs)
 
   return _BigQueryExampleGen()
