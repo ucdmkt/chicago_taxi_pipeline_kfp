@@ -7,7 +7,7 @@ from __future__ import print_function
 from absl import app
 from absl import flags
 
-from tfx.components.example_gen.big_query_example_gen import component as big_query_example_gen_component
+from tfx.components.example_gen.big_query_example_gen.component import BigQueryExampleGen
 from tfx.proto import example_gen_pb2
 
 from common.adapter import TfxComponentWrapper
@@ -46,9 +46,7 @@ def bigquery(num_records: int, **kwargs) -> TfxComponentWrapper:
   class _BigQueryExampleGen(TfxComponentWrapper):
 
     def __init__(self):
-      component = big_query_example_gen_component.BigQueryExampleGen(
-          QUERY_TMPL.format(num_records),
-      )
+      component = BigQueryExampleGen(QUERY_TMPL.format(num_records))
       super().__init__(component, **kwargs)
 
   return _BigQueryExampleGen()

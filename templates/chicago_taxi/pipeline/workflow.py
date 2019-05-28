@@ -18,10 +18,11 @@ import os
 
 from typing import Optional, Dict, List, Text
 
-from google.protobuf import text_format
-
 from common.adapter import TfxComponentWrapper
 import data_source
+from data_validation import schema_gen
+from data_validation import statistics_gen
+from data_validation import example_validator
 
 from kfp import dsl
 from kfp import gcp
@@ -30,8 +31,6 @@ from kfp.compiler import compiler
 import tensorflow as tf
 from . import manager
 
-from tfx.components.example_gen.big_query_example_gen import component as big_query_example_gen_component
-from tfx.components.statistics_gen import component as statistics_gen_component
 from tfx.components.schema_gen import component as schema_gen_component
 from tfx.components.example_validator import component as example_validator_component
 from tfx.components.transform import component as transform_component
@@ -48,14 +47,6 @@ from tfx.utils import channel
 
 
 # TODO(muchida): Modularize other component definitions as well.
-
-class StatisticsGen(TfxComponentWrapper):
-
-  def __init__(self, input_data: str):
-    component = statistics_gen_component.StatisticsGen(
-        channel.Channel('ExamplesPath'))
-    super().__init__(component, {"input_data": input_data})
-
 
 class SchemaGen(TfxComponentWrapper):
 
@@ -184,17 +175,28 @@ def pipeline(
       'log_root': log_root,
   }
 
-  example_gen = data_source.bigquery(
-      num_records=num_records, **common_component_args)
+  training_data = data_source.bigquery(
+      num_records=num_records,
+      **common_component_args)
 
-#  statistics_gen = StatisticsGen(input_data=example_gen.outputs['examples'])
-#
-#  infer_schema = SchemaGen(stats=statistics_gen.outputs['output'])
-#
-#  validate_stats = ExampleValidator(
-#      stats=statistics_gen.outputs['output'],
-#      schema=infer_schema.outputs['output'])
-#
+  statistics = statistics_gen(
+      input_dict={'input_data': training_data.outputs['examples']},
+      **common_component_args
+  )
+
+  schema = schema_gen(
+      input_dict={'stats': statistics.outputs['output']},
+      **common_component_args
+  )
+
+  validated_stats = example_validator(
+      input_dict={
+          'stats': statistics.outputs['output'],
+          'schema': schema.outputs['output']
+      },
+      **common_component_args
+  )
+
 #  transform = Transform(
 #      input_data=example_gen.outputs['examples'],
 #      schema=infer_schema.outputs['output'],
