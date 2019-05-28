@@ -25,6 +25,12 @@ from tfx.components.transform.component import Transform
 from tfx.utils import channel
 
 
+def preprocessing_fn(inputs):
+  """No-op transform just for the purpose of demonstration."""
+  outputs = inputs.copy()
+  return outputs
+
+
 def transform(training_data,
               schema,
               module_file,

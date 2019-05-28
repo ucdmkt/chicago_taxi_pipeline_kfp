@@ -85,7 +85,6 @@ class TfxComponentRunner(object):
         self._command.append(v)
 
   def run(self):
-    print('executing: {}'.format(self._command))
     subprocess.check_call(self._command)
 
 
@@ -108,11 +107,14 @@ class StatisticsGenRunner(TfxComponentRunner):
 class SchemaGenRunner(TfxComponentRunner):
 
   def __init__(self, args):
-    stats = tfx.Types()
-    stats.uri = args.uri
+    #stats = tfx.Types()
+    #stats.uri = args.uri
+    #component = schema_gen_component.SchemaGen(
+    #    channel.Channel('ExampleStatisticsPath', static_artifact_collection=[types.TfxType('ExamplesStatisticsPath')]))
+    #super(SchemaGenRunner, self).__init__(component, {"stats": types.jsonify( ))']'
     component = schema_gen_component.SchemaGen(
-        channel.Channel('ExampleStatisticsPath', static_artifact_collection=[types.TfxType('ExamplesStatisticsPath')]))
-    super(SchemaGenRunner, self).__init__(component, {"stats": types.jsonify( ))']'
+        channel.Channel('ExampleStatisticsPath'))
+    super(SchemaGenRunner, self).__init__(component, {"stats": args.stats})
 
 
 class ExampleValidatorRunner(TfxComponentRunner):
@@ -139,7 +141,6 @@ class TransformRunner(TfxComponentRunner):
 
 
 def main():
-  print('hello')
   parser = argparse.ArgumentParser()
   parser.add_argument('--output_dir', type=str, required=True)
   parser.add_argument('--log_root', type=str, default='/var/tmp/log')

@@ -31,7 +31,7 @@ from kubernetes import client as k8s_client
 from tfx.components.base import base_component
 from tfx.utils import types
 
-_IMAGE = 'gcr.io/caipe-dev/tensorflow/tfx-muchida:latest'
+_IMAGE = 'gcr.io/caipe-dev/tensorflow/tfx-muchida-2:latest'
 
 _COMMAND = [
     'python',
@@ -93,8 +93,8 @@ class TfxComponentWrapper(dsl.ContainerOp):
     super().__init__(
         name=component.component_name,
         # TODO(muchida): each component could take different child image,
-        # while maintaining the common entry point. It is nice because it could
-        # cleanly embeds user code and/or configuration.
+        # while maintaining the common entry point. It is nice because
+        # it could cleanly embeds user code and/or configuration.
         image=_IMAGE,
         command=_COMMAND,
         arguments=arguments,

@@ -65,14 +65,10 @@ class TfxComponentWrapper(dsl.ContainerOp):
     }
 
     arguments = [
-        '--output_dir',
-        self._output_dir,
-        '--project_id',
-        self._project_id,
-        '--gcp_region',
-        self._gcp_region,
-        '--beam_runner',
-        self._beam_runner,
+        '--output_dir', self._output_dir,
+        '--project_id', self._project_id,
+        '--gcp_region', self._gcp_region,
+        '--beam_runner', self._beam_runner,
         component.component_name,
     ]
 
@@ -103,7 +99,7 @@ class TfxComponentWrapper(dsl.ContainerOp):
 class BigQueryExampleGen(TfxComponentWrapper):
 
   def __init__(self, query: dsl.PipelineParam):
-    component = big_query_example_gen_component.BigQueryExampleGen('')
+    component = big_query_example_gen_component.BigQueryExampleGen(str(query))
     super().__init__(component, {"query": query})
 
 
