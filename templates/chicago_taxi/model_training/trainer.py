@@ -40,7 +40,7 @@ def trainer(input_dict,
           schema=channel.Channel('SchemaPath'),
           transform_output=channel.Channel('TransformPath'),
           #
-          # TODO(muchida): Figure out how to inject PipelineParam.
+          # TODO(muchida): Figure out how to inject integer PipelineParam.
           train_args=trainer_pb2.TrainArgs(
               #num_steps=training_steps
               num_steps=10000
