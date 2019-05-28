@@ -94,6 +94,8 @@ def pipeline(
   statistics = statistics_gen(training_data=training_data,
                               **common_component_args)
 
+  # TODO: Add control flow to retrieve schema from pipeline itself, if exists.
+
   schema = schema_gen(statistics=statistics,
                       **common_component_args)
 
