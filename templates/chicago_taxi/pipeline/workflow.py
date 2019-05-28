@@ -111,7 +111,7 @@ def pipeline(
 
   transformed_data = transform(
       input_dict={
-          'examples': training_data.outputs['examples'],
+          'input_data': training_data.outputs['examples'],
           'schema': schema.outputs['output'],
       },
       module_file=transform_module,

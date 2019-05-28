@@ -31,8 +31,8 @@ def transform(input_dict, module_file,  **kwargs) -> TfxComponentWrapper:
 
     def __init__(self):
       component = Transform(
-          channel.Channel('ExamplesPath'),
-          channel.Channel('SchemaPath'),
+          input_data=channel.Channel('ExamplesPath'),
+          schema=channel.Channel('SchemaPath'),
           module_file=str(module_file),
       )
       super().__init__(component, input_dict, **kwargs)
