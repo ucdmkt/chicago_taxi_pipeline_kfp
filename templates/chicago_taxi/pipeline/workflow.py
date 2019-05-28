@@ -15,117 +15,35 @@
 import argparse
 import json
 import os
-
+import tensorflow as tf
 from typing import Optional, Dict, List, Text
 
-from common.adapter import TfxComponentWrapper
+from . import manager
 
+# Following imports define TFX components for this pipeline.
 from data_source import bigquery
 from data_validation import schema_gen
 from data_validation import statistics_gen
 from data_validation import example_validator
 from data_transformation import transform
 from model_training import trainer
+from model_evaluation import evaluator
+from model_validation import model_validator
+from model_serving import savedmodel_pusher
 
 from kfp import dsl
 from kfp import gcp
 from kfp.compiler import compiler
 
-import tensorflow as tf
-from . import manager
-
-from tfx.components.trainer import component as trainer_component
-from tfx.components.evaluator import component as evaluator_component
-from tfx.components.model_validator import component as model_validator_component
 from tfx.components.pusher import component as pusher_component
-from tfx.components.base import base_component
 from tfx.proto import evaluator_pb2
 from tfx.proto import pusher_pb2
 from tfx.utils import types
 from tfx.utils import channel
 
 
-# TODO(muchida): Modularize other component definitions as well.
-
-
-class Trainer(TfxComponentWrapper):
-
-  def __init__(self, module_file: str, transformed_examples: str, schema: str,
-               transform_output: str, training_steps: int,
-               eval_training_steps: int):
-    component = trainer_component.Trainer(
-        module_file=module_file,
-        transformed_examples=channel.Channel('ExamplesPath'),
-        schema=channel.Channel('SchemaPath'),
-        transform_output=channel.Channel('TransformPath'),
-        train_args=trainer_pb2.TrainArgs(num_steps=training_steps),
-        eval_args=trainer_pb2.EvalArgs(num_steps=eval_training_steps))
-
-    super().__init__(
-        component, {
-            "transformed_examples": transformed_examples,
-            "schema": schema,
-            "transform_output": transform_output
-        })
-
-
-class Evaluator(TfxComponentWrapper):
-
-  def __init__(self, examples: str, model_exports: str,
-               feature_slicing_spec: List[List[str]]):
-    slicing_spec = evaluator_pb2.FeatureSlicingSpec()
-    for slice_spec in feature_slicing_spec:
-      spec = slicing_spec.specs.add()
-      for column in slice_spec:
-        spec.column_for_slicing.append(column)
-
-    component = evaluator_component.Evaluator(
-        channel.Channel('ExamplesPath'),
-        channel.Channel('ModelExportPath'),
-        feature_slicing_spec=slicing_spec)
-
-    super().__init__(component, {
-        "examples": examples,
-        "model_exports": model_exports,
-    })
-
-
-class ModelValidator(TfxComponentWrapper):
-
-  def __init__(self, examples: str, model: str):
-    component = model_validator_component.ModelValidator(
-        channel.Channel('ExamplesPath'), channel.Channel('ModelExportPath'))
-
-    super().__init__(component, {
-        "examples": examples,
-        "model": model,
-    })
-
-
-class Pusher(TfxComponentWrapper):
-
-  def __init__(self, model_export: str, model_blessing: str,
-               serving_directory: str):
-    push_destination = pusher_pb2.PushDestination(
-        filesystem=pusher_pb2.PushDestination.Filesystem(
-            base_directory=serving_directory))
-
-    component = pusher_component.Pusher(
-        model_export=channel.Channel('ModelExportPath'),
-        model_blessing=channel.Channel('ModelBlessingPath'),
-        push_destination=push_destination)
-
-    super().__init__(component, {
-        "model_export": model_export,
-        "model_blessing": model_blessing,
-    })
-
-
-_taxi_utils = "gs://muchida-tfx-oss-kfp/taxi_utils.py"
-
-
 @dsl.pipeline(
-    name="Chicago Taxi Cab Tip Prediction Pipeline",
+    name="This is a skeleton template pipeline.",
     description="TODO"
 )
 def pipeline(
@@ -136,16 +54,17 @@ def pipeline(
     pipeline_name: Text=manager.PIPELINE_NAME,
     log_root: Text=manager.LOG_ROOT,
     # ExampleGen params
-    num_records: int = 10000,
+    num_records: int = 10000,        # This works.
     # Transform params
     transform_module: Text = 'gs://muchida-tfx-oss-kfp/taxi_utils.py',
     # Trainer params
     trainer_module: Text = 'gs://muchida-tfx-oss-kfp/taxi_utils.py',
-    training_steps: Text = '10000',
-    eval_steps: Text = '100',
+    training_steps: int = 10000,     # This doesn't work.
+    eval_steps: int = 100,           # This doesn't work.
     # Evaluator params
-
-    # Validator params
+    columns_for_slicing: Text = '',  # This doesn't work.
+    # Pusher params
+    serving_directory: Text = ''     # This works.
 ):
 
   common_component_args = {
@@ -197,18 +116,34 @@ def pipeline(
       eval_steps=eval_steps,
   )
 
-#  model_analyzer = Evaluator(
-#      examples=example_gen.outputs['examples'],
-#      model_exports=trainer.outputs['output'],
-#      feature_slicing_spec=[['trip_start_hour']])
-#
-#  model_validator = ModelValidator(
-#      examples=example_gen.outputs['examples'], model=trainer.outputs['output'])
-#
-#  pusher = Pusher(
-#      model_export=trainer.outputs['output'],
-#      model_blessing=model_validator.outputs['blessing'],
-#      serving_directory="")
+  model_analysis = evaluator(
+      input_dict={
+          'examples': training_data.outputs['examples'],
+          'model_exports': trained_model.outputs['output']
+      },
+      columns_for_slicing=[
+          ['trip_start_hour', 'payment_type'],
+          ['company']
+      ],
+      **common_component_args
+  )
+
+  validated_model = model_validator(
+      input_dict={
+          'examples': training_data.outputs['examples'],
+          'model_exports': trained_model.outputs['output']
+      },
+      **common_component_args
+  )
+
+  pushed_model = savedmodel_pusher(
+      input_dict={
+        "model_export": trained_model.outputs['output'],
+        "model_blessing": validated_model.outputs['blessing'],
+      },
+      serving_directory=serving_directory,
+      **common_component_args
+  )
 
 
 if __name__ == '__main__':
