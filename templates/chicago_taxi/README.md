@@ -34,3 +34,16 @@ a classification model for [Chicago Taxi tip prediction pipeline](https://github
 5. Make sure integration tests passes (not implemented yet).
 6. Compile and run the pipeline in a Kubeflow for experimentation.
 
+
+## Outstanding development items
+
+*  Not all pipeline-level parameters work. Need to figured out delayed
+   evaluation of parameters passed to component at runtime (such as
+   `training_steps`).
+*  `taxi_util.py` should be a part of child image, and Trainer and Transform
+   component should be able to retrieve it from within the container..
+   * Going to be address in the alternative approach.
+*  Bazel and Cloud Build config is not implemented.
+*  Integration test is not implemented.
+*  Unit test is only a skeleton.
+*  Companion notebook.
