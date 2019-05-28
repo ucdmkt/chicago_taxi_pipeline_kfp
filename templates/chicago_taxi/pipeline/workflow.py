@@ -91,50 +91,32 @@ def pipeline(
 
   training_data = bigquery(num_records=num_records, **common_component_args)
 
-  statistics = statistics_gen(
-      input_dict={'input_data': training_data.outputs['examples']},
-      **common_component_args
-  )
+  statistics = statistics_gen(training_data=training_data,
+                              **common_component_args)
 
-  schema = schema_gen(
-      input_dict={'stats': statistics.outputs['output']},
-      **common_component_args
-  )
+  schema = schema_gen(statistics=statistics,
+                      **common_component_args)
 
-  validated_stats = example_validator(
-      input_dict={
-          'stats': statistics.outputs['output'],
-          'schema': schema.outputs['output']
-      },
-      **common_component_args
-  )
+  validated_stats = example_validator(statistics=statistics,
+                                      schema=schema,
+                                      **common_component_args)
 
-  transformed_data = transform(
-      input_dict={
-          'input_data': training_data.outputs['examples'],
-          'schema': schema.outputs['output'],
-      },
-      module_file=transform_module,
-      **common_component_args,
-  )
+  transformed_data = transform(training_data=training_data,
+                               schema=schema,
+                               module_file=transform_module,
+                               **common_component_args)
 
-  trained_model = trainer(
-      input_dict={
-          'transformed_examples':
-          transformed_data.outputs['transformed_examples'],
-          'schema': schema.outputs['output'],
-          'transform_output': transformed_data.outputs['transform_output'],
-      },
-      module_file=trainer_module,
-      training_steps=training_steps,
-      eval_steps=eval_steps,
-  )
+  trained_model = trainer(transformed_data=transformed_data,
+                          schema=schema,
+                          module_file=trainer_module,
+                          training_steps=training_steps,
+                          eval_steps=eval_steps,
+                          **common_component_args)
 
   model_analysis = evaluator(
-      input_dict={
-          'examples': training_data.outputs['examples'],
-          'model_exports': trained_model.outputs['output']
-      },
+      training_data,
+      trained_model,
+      # TODO(muchida): Figure out how to inject PipelineParams to this.
       columns_for_slicing=[
           ['trip_start_hour', 'payment_type'],
           ['company']
@@ -142,22 +124,14 @@ def pipeline(
       **common_component_args
   )
 
-  validated_model = model_validator(
-      input_dict={
-          'examples': training_data.outputs['examples'],
-          'model_exports': trained_model.outputs['output']
-      },
-      **common_component_args
-  )
+  validated_model = model_validator(training_data,
+                                    trained_model,
+                                    **common_component_args)
 
-  pushed_model = savedmodel_pusher(
-      input_dict={
-        "model_export": trained_model.outputs['output'],
-        "model_blessing": validated_model.outputs['blessing'],
-      },
-      serving_directory=serving_directory,
-      **common_component_args
-  )
+  pushed_model = savedmodel_pusher(trained_model,
+                                   validated_model,
+                                   serving_directory=serving_directory,
+                                   **common_component_args)
 
 
 if __name__ == '__main__':

@@ -24,7 +24,7 @@ from tfx.components.example_validator.component import ExampleValidator
 from tfx.utils import channel
 
 
-def example_validator(input_dict, **kwargs) -> TfxComponentWrapper:
+def example_validator(statistics, schema, **kwargs) -> TfxComponentWrapper:
 
   class _ExampleValidator(TfxComponentWrapper):
 
@@ -32,6 +32,12 @@ def example_validator(input_dict, **kwargs) -> TfxComponentWrapper:
       component = ExampleValidator(
           channel.Channel('ExampleStatisticsPath'),
           channel.Channel('SchemaPath'))
-      super().__init__(component, input_dict, **kwargs)
+      super().__init__(
+          component,
+          {
+              'stats': statistics.outputs['output'],
+              'schema': schema.outputs['output'],
+          },
+          **kwargs)
 
   return _ExampleValidator()

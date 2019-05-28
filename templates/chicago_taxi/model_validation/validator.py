@@ -25,7 +25,9 @@ from tfx.proto import evaluator_pb2
 from tfx.utils import channel
 
 
-def model_validator(input_dict, **kwargs) -> TfxComponentWrapper:
+def model_validator(training_data,
+                    trained_model,
+                    **kwargs) -> TfxComponentWrapper:
 
   class _ModelValidator(TfxComponentWrapper):
 
@@ -33,6 +35,11 @@ def model_validator(input_dict, **kwargs) -> TfxComponentWrapper:
       component = ModelValidator(channel.Channel('ExamplesPath'),
                                  channel.Channel('ModelExportPath'))
 
-      super().__init__(component, input_dict, **kwargs)
+      super().__init__(component,
+                       {
+                           'examples': training_data.outputs['examples'],
+                           'model_exports': trained_model.outputs['output']
+                       },
+                       **kwargs)
 
   return _ModelValidator()

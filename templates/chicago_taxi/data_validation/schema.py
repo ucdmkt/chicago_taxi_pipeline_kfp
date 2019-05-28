@@ -24,12 +24,13 @@ from tfx.components.schema_gen.component import SchemaGen
 from tfx.utils import channel
 
 
-def schema_gen(input_dict, **kwargs) -> TfxComponentWrapper:
+def schema_gen(statistics, **kwargs) -> TfxComponentWrapper:
 
   class _SchemaGen(TfxComponentWrapper):
 
     def __init__(self):
       component = SchemaGen(channel.Channel('ExampleStatisticsPath'))
-      super().__init__(component, input_dict, **kwargs)
+      super().__init__(
+          component, {'stats': statistics.outputs['output']}, **kwargs)
 
   return _SchemaGen()

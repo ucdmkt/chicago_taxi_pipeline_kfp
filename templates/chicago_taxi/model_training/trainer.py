@@ -25,7 +25,8 @@ from tfx.proto import trainer_pb2
 from tfx.utils import channel
 
 
-def trainer(input_dict,
+def trainer(transformed_data,
+            schema,
             module_file,
             training_steps: int,
             eval_steps: int,
@@ -50,6 +51,14 @@ def trainer(input_dict,
               num_steps=1000
           ),
       )
-      super().__init__(component, input_dict, **kwargs)
+      super().__init__(
+          component,
+          {
+              'transformed_examples':
+              transformed_data.outputs['transformed_examples'],
+              'schema': schema.outputs['output'],
+              'transform_output': transformed_data.outputs['transform_output'],
+          },
+          **kwargs)
 
   return _Trainer()

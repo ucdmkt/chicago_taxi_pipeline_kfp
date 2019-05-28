@@ -24,12 +24,13 @@ from tfx.components.statistics_gen.component import StatisticsGen
 from tfx.utils import channel
 
 
-def statistics_gen(input_dict, **kwargs) -> TfxComponentWrapper:
+def statistics_gen(training_data, **kwargs) -> TfxComponentWrapper:
 
   class _StatisticsGen(TfxComponentWrapper):
 
     def __init__(self):
       component = StatisticsGen(channel.Channel('ExamplesPath'))
-      super().__init__(component, input_dict=input_dict, **kwargs)
+      super().__init__(
+          component, {'input_data': training_data.outputs['examples']}, **kwargs)
 
   return _StatisticsGen()

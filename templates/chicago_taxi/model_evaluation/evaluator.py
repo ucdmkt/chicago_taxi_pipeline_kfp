@@ -25,7 +25,8 @@ from tfx.proto import evaluator_pb2
 from tfx.utils import channel
 
 
-def evaluator(input_dict,
+def evaluator(training_data,
+              trained_model,
               columns_for_slicing,
               **kwargs) -> TfxComponentWrapper:
 
@@ -43,6 +44,12 @@ def evaluator(input_dict,
                             channel.Channel('ModelExportPath'),
                             feature_slicing_spec=slicing_spec)
 
-      super().__init__(component, input_dict, **kwargs)
+      super().__init__(
+          component,
+          {
+              'examples': training_data.outputs['examples'],
+              'model_exports': trained_model.outputs['output']
+          },
+          **kwargs)
 
   return _Evaluator()

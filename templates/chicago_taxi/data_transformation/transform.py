@@ -25,7 +25,10 @@ from tfx.components.transform.component import Transform
 from tfx.utils import channel
 
 
-def transform(input_dict, module_file,  **kwargs) -> TfxComponentWrapper:
+def transform(training_data,
+              schema,
+              module_file,
+              **kwargs) -> TfxComponentWrapper:
 
   class _Transform(TfxComponentWrapper):
 
@@ -35,6 +38,12 @@ def transform(input_dict, module_file,  **kwargs) -> TfxComponentWrapper:
           schema=channel.Channel('SchemaPath'),
           module_file=str(module_file),
       )
-      super().__init__(component, input_dict, **kwargs)
+      super().__init__(
+          component,
+          {
+              'input_data': training_data.outputs['examples'],
+              'schema': schema.outputs['output'],
+          },
+          **kwargs)
 
   return _Transform()

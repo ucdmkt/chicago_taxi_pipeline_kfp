@@ -28,7 +28,8 @@ from tfx.utils import channel
 # TODO(muchida): Add Cloud AI Platform pusher.
 
 def savedmodel_pusher(
-    input_dict,
+    trained_model,
+    validated_model,
     serving_directory,
     **kwargs) -> TfxComponentWrapper:
 
@@ -45,6 +46,12 @@ def savedmodel_pusher(
           model_blessing=channel.Channel('ModelBlessingPath'),
           push_destination=push_destination
       )
-      super().__init__(component, input_dict, **kwargs)
+      super().__init__(
+          component,
+          {
+              "model_export": trained_model.outputs['output'],
+              "model_blessing": validated_model.outputs['blessing'],
+          },
+          **kwargs)
 
   return _Pusher()
