@@ -41,8 +41,8 @@ a classification model for [Chicago Taxi tip prediction pipeline](https://github
    evaluation of parameters passed to component at runtime (such as
    `training_steps`).
 *  `taxi_util.py` should be a part of child image, and Trainer and Transform
-   component should be able to retrieve it from within the container..
-   * Going to be address in the alternative approach.
+   component should be able to retrieve it from within the container.
+   * Going to be addressed in the alternative approach.
 *  Figure out a way to have `schema.pbtxt` as a pipeline asset.
    * Once figured out, add control flow in the pipeline to execute SchemaGen if
      and only if schema.pbtxt isn't supplied.
