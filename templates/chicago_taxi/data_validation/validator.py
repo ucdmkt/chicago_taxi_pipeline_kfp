@@ -16,7 +16,8 @@ def example_validator(input_dict, **kwargs) -> TfxComponentWrapper:
 
     def __init__(self):
       component = ExampleValidator(
-          channel.Channel('ExampleStatisticsPath'), channel.Channel('SchemaPath'))
+          channel.Channel('ExampleStatisticsPath'),
+          channel.Channel('SchemaPath'))
       super().__init__(component, input_dict, **kwargs)
 
   return _ExampleValidator()

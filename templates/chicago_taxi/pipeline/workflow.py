@@ -19,10 +19,13 @@ import os
 from typing import Optional, Dict, List, Text
 
 from common.adapter import TfxComponentWrapper
-import data_source
+
+from data_source import bigquery
 from data_validation import schema_gen
 from data_validation import statistics_gen
 from data_validation import example_validator
+from data_transformation import transform
+from model_training import trainer
 
 from kfp import dsl
 from kfp import gcp
@@ -31,9 +34,6 @@ from kfp.compiler import compiler
 import tensorflow as tf
 from . import manager
 
-from tfx.components.schema_gen import component as schema_gen_component
-from tfx.components.example_validator import component as example_validator_component
-from tfx.components.transform import component as transform_component
 from tfx.components.trainer import component as trainer_component
 from tfx.components.evaluator import component as evaluator_component
 from tfx.components.model_validator import component as model_validator_component
@@ -41,39 +41,11 @@ from tfx.components.pusher import component as pusher_component
 from tfx.components.base import base_component
 from tfx.proto import evaluator_pb2
 from tfx.proto import pusher_pb2
-from tfx.proto import trainer_pb2
 from tfx.utils import types
 from tfx.utils import channel
 
 
 # TODO(muchida): Modularize other component definitions as well.
-
-class SchemaGen(TfxComponentWrapper):
-
-  def __init__(self, stats: str):
-    component = schema_gen_component.SchemaGen(
-        channel.Channel('ExampleStatisticsPath'))
-    super().__init__(component, {"stats": stats})
-
-
-class ExampleValidator(TfxComponentWrapper):
-
-  def __init__(self, stats: str, schema: str):
-    component = example_validator_component.ExampleValidator(
-        channel.Channel('ExampleStatisticsPath'), channel.Channel('SchemaPath'))
-
-    super().__init__(component, {"stats": stats, "schema": schema})
-
-
-class Transform(TfxComponentWrapper):
-
-  def __init__(self, input_data: str, schema: str, module_file: str):
-    component = transform_component.Transform(
-        input_data=channel.Channel('ExamplesPath'),
-        schema=channel.Channel('SchemaPath'),
-        module_file=module_file)
-
-    super().__init__(component, {"input_data": input_data, "schema": schema})
 
 
 class Trainer(TfxComponentWrapper):
@@ -163,8 +135,17 @@ def pipeline(
     pipeline_root: Text=manager.PIPELINE_ROOT,
     pipeline_name: Text=manager.PIPELINE_NAME,
     log_root: Text=manager.LOG_ROOT,
-    # ExampleGen parames
+    # ExampleGen params
     num_records: int = 10000,
+    # Transform params
+    transform_module: Text = 'gs://muchida-tfx-oss-kfp/taxi_utils.py',
+    # Trainer params
+    trainer_module: Text = 'gs://muchida-tfx-oss-kfp/taxi_utils.py',
+    training_steps: Text = '10000',
+    eval_steps: Text = '100',
+    # Evaluator params
+
+    # Validator params
 ):
 
   common_component_args = {
@@ -175,9 +156,7 @@ def pipeline(
       'log_root': log_root,
   }
 
-  training_data = data_source.bigquery(
-      num_records=num_records,
-      **common_component_args)
+  training_data = bigquery(num_records=num_records, **common_component_args)
 
   statistics = statistics_gen(
       input_dict={'input_data': training_data.outputs['examples']},
@@ -197,19 +176,27 @@ def pipeline(
       **common_component_args
   )
 
-#  transform = Transform(
-#      input_data=example_gen.outputs['examples'],
-#      schema=infer_schema.outputs['output'],
-#      module_file=_taxi_utils)
-#
-#  trainer = Trainer(
-#      module_file=_taxi_utils,
-#      transformed_examples=transform.outputs['transformed_examples'],
-#      schema=infer_schema.outputs['output'],
-#      transform_output=transform.outputs['transform_output'],
-#      training_steps=10000,
-#      eval_training_steps=5000)
-#
+  transformed_data = transform(
+      input_dict={
+          'examples': training_data.outputs['examples'],
+          'schema': schema.outputs['output'],
+      },
+      module_file=transform_module,
+      **common_component_args,
+  )
+
+  trained_model = trainer(
+      input_dict={
+          'transformed_examples':
+          transformed_data.outputs['transformed_examples'],
+          'schema': schema.outputs['output'],
+          'transform_output': transformed_data.outputs['transform_output'],
+      },
+      module_file=trainer_module,
+      training_steps=training_steps,
+      eval_steps=eval_steps,
+  )
+
 #  model_analyzer = Evaluator(
 #      examples=example_gen.outputs['examples'],
 #      model_exports=trainer.outputs['output'],
