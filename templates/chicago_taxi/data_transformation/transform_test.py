@@ -11,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-"""Tests for data_transformation  module."""
+"""Tests for data_transformation module."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -23,9 +22,12 @@ import tensorflow as tf
 from . import transform
 
 
-class DataTransformationTest(tf.test.TestCase):
+class TransformTest(tf.test.TestCase):
 
-  def testTransform(self):
+  def test_transform(self):
+    pass
+
+  def test_preprocessing_fn(self):
     pass
 
 

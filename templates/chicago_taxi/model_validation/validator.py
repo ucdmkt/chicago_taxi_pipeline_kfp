@@ -38,7 +38,7 @@ def model_validator(training_data,
       super().__init__(component,
                        {
                            'examples': training_data.outputs['examples'],
-                           'model_exports': trained_model.outputs['output']
+                           'model': trained_model.outputs['output']
                        },
                        **kwargs)
 

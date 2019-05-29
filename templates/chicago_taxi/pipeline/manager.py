@@ -22,4 +22,5 @@ PIPELINE_ROOT = ''
 PIPELINE_NAME = ''
 LOG_ROOT = ''
 
-IMAGE = ''
+BEAM_RUNNER = 'DirectRunner'
+

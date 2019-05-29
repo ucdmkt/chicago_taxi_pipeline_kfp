@@ -23,9 +23,12 @@ import tensorflow as tf
 from . import trainer
 
 
-class ModelTrainingTest(tf.test.TestCase):
+class TrainerTest(tf.test.TestCase):
 
-  def testTrainer(self):
+  def test_trainer_fn(self):
+    pass
+
+  def test_trainer(self):
     pass
 
 
