@@ -71,6 +71,7 @@ def preprocessing_fn(inputs):
 
   return outputs
 
+#####
 
 def transform(training_data,
               schema,
@@ -83,6 +84,7 @@ def transform(training_data,
       component = Transform(
           # Find user code implementation from inside of the container.
           module_file="/pipeline-srcs/model_training/taxi_utils.py",
+          # TODO: When TFX binary enables Py3 runtime, retire taxi_utils.py.
           #module_file="/pipeline-srcs/data_transfomration/tranform.py",
           input_data=channel.Channel('ExamplesPath'),
           schema=channel.Channel('SchemaPath'),

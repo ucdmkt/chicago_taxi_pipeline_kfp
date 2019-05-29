@@ -252,6 +252,7 @@ def trainer_fn(hparams, schema):
       'eval_input_receiver_fn': receiver_fn
   }
 
+#####
 
 def trainer(transformed_data,
             schema,
@@ -266,6 +267,7 @@ def trainer(transformed_data,
       component = Trainer(
           # Find user code implementation from inside of the container.
           module_file="/pipeline-srcs/model_training/taxi_utils.py",
+          # TODO: When TFX binary enables Py3 runtime, retire taxi_utils.py.
           #module_file="/pipeline-srcs/model_training/trainer.py",
           transformed_examples=channel.Channel('ExamplesPath'),
           schema=channel.Channel('SchemaPath'),
