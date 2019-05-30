@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """This code defines adapter code for Components."""
 
 from __future__ import absolute_import
@@ -30,34 +31,14 @@ from kubernetes import client as k8s_client
 from tfx.components.base import base_component
 from tfx.utils import types
 
-# This image is expected to contain all files under pipeline user code,
-# plus any dependencies. Expectation is that TFX image is the base image.
-_IMAGE = 'gcr.io/caipe-dev/tensorflow/tfx-muchida-2:latest'
+_IMAGE = 'gcr.io/caipe-dev/tensorflow/tfx-muchida:latest'
 
-# This is const. It should not change.
 _COMMAND = [
     'python',
     '/tfx-src/tfx/orchestration/kubeflow/container_entrypoint.py',
 ]
 
 class TfxComponentWrapper(dsl.ContainerOp):
-
-  @classmethod
-  def setup_pipeline_params(
-      cls,
-      gcp_project_id,
-      gcp_region,
-      pipeline_root,
-      pipeline_name,
-      log_root,
-      beam_runner):
-
-    cls.pipeline_root = pipeline_root
-    cls.pipeline_name = pipeline_name
-    cls.gcp_project_id = gcp_project_id
-    cls.gcp_region = gcp_region
-    cls.log_root = log_root
-    cls.beam_runner = beam_runner
 
   def __init__(
       self,
@@ -82,13 +63,14 @@ class TfxComponentWrapper(dsl.ContainerOp):
 
     # extra exec properties that is needed for KubeflowExecutorWrapper.
     exec_properties['output_dir'] = os.path.join(
-        self.__class__.pipeline_root, self.__class__.pipeline_name)
+        str(kwargs.get('pipeline_root')), str(kwargs.get('pipeline_name')))
     exec_properties['beam_pipeline_args'] = [
-        '--runner=' + self.__class__.beam_runner,
+        '--runner=DataflowRunner',
         '--experiments=shuffle_mode=auto',
-        '--project=' + self.__class__.gcp_project_id,
-        '--temp_location=' + os.path.join(self.__class__.pipeline_root, 'tmp'),
-        '--region=' + self.__class__.gcp_region,
+        '--project=' + str(kwargs.get('gcp_project_id')),
+        '--temp_location=' + os.path.join(
+            str(kwargs.get('pipeline_root')), 'tmp'),
+        '--region=' + str(kwargs.get('gcp_region')),
     ]
 
     arguments = [
@@ -110,6 +92,9 @@ class TfxComponentWrapper(dsl.ContainerOp):
 
     super().__init__(
         name=component.component_name,
+        # TODO(muchida): each component could take different child image,
+        # while maintaining the common entry point. It is nice because it could
+        # cleanly embeds user code and/or configuration.
         image=_IMAGE,
         command=_COMMAND,
         arguments=arguments,
