@@ -22,7 +22,6 @@ import json
 import os
 
 from typing import Optional, Dict, List
-
 from kfp import dsl
 from kfp import gcp
 from kfp.compiler import compiler
@@ -31,10 +30,10 @@ from kubernetes import client as k8s_client
 from tfx.components.base import base_component
 from tfx.utils import types
 
-_IMAGE = 'gcr.io/caipe-dev/tensorflow/tfx-muchida:latest'
+_IMAGE = 'gcr.io/caipe-dev/tensorflow/tfx-muchida-py3:latest'
 
 _COMMAND = [
-    'python',
+    'python3.5',
     '/tfx-src/tfx/orchestration/kubeflow/container_entrypoint.py',
 ]
 
@@ -65,7 +64,7 @@ class TfxComponentWrapper(dsl.ContainerOp):
     exec_properties['output_dir'] = os.path.join(
         str(kwargs.get('pipeline_root')), str(kwargs.get('pipeline_name')))
     exec_properties['beam_pipeline_args'] = [
-        '--runner=DataflowRunner',
+        '--runner=' + str(kwargs.get('dataflow_runner')),
         '--experiments=shuffle_mode=auto',
         '--project=' + str(kwargs.get('gcp_project_id')),
         '--temp_location=' + os.path.join(

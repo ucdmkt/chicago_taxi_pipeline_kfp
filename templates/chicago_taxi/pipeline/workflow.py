@@ -53,6 +53,7 @@ def pipeline(
     pipeline_root: Text=manager.PIPELINE_ROOT,
     pipeline_name: Text=manager.PIPELINE_NAME,
     log_root: Text=manager.LOG_ROOT,
+    dataflow_runner: Text='DirectRunner',
     # ExampleGen params
     num_records: int = 10000,        # This works.
     # Transform params
@@ -73,6 +74,7 @@ def pipeline(
       'pipeline_root': pipeline_root,
       'pipeline_name': pipeline_name,
       'log_root': log_root,
+      'dataflow_runner': dataflow_runner
   }
 
   training_data = bigquery(num_records=num_records, **common_component_args)
