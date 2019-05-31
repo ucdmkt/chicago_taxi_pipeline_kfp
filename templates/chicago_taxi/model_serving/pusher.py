@@ -37,8 +37,10 @@ def savedmodel_pusher(
 
     def __init__(self):
 
-      push_destination = pusher_pb2.PushDestination.Filesystem(
-          base_directory=str(serving_directory),
+      push_destination = pusher_pb2.PushDestination(
+          filesystem=pusher_pb2.PushDestination.Filesystem(
+              base_directory=str(serving_directory),
+          )
       )
 
       component = Pusher(
