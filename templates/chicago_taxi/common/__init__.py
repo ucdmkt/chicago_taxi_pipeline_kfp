@@ -13,3 +13,4 @@
 # limitations under the License.
 
 from . import adapter
+from . import features
